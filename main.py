@@ -3,7 +3,10 @@ from discord.ext import commands
 from datetime import timedelta
 import json
 import random
-from config import TOKEN, PREFIX, STAFF_ROLE_ID
+from config import PREFIX, STAFF_ROLE_ID
+import os
+
+TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.all()
 
