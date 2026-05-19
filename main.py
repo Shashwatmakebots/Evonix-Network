@@ -255,13 +255,6 @@ async def on_ready():
 
     print(f"Logged in as {bot.user}")
 
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands")
-
-    except Exception as e:
-        print(e)
-
 @bot.event
 async def on_command_error(ctx, error):
 
@@ -283,7 +276,5 @@ async def on_command_error(ctx, error):
 
     else:
         print(error)
-
-# ================= RUN =================
 
 bot.run(TOKEN)
