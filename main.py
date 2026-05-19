@@ -250,6 +250,40 @@ async def plinko(ctx, bet: int):
 
     await ctx.send(embed=embed)
 
+@bot.event
+async def on_ready():
+
+    print(f"Logged in as {bot.user}")
+
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} slash commands")
+
+    except Exception as e:
+        print(e)
+
+@bot.event
+async def on_command_error(ctx, error):
+
+    if isinstance(error, commands.MissingRequiredArgument):
+
+        await ctx.send(
+            "❌ Missing required arguments."
+        )
+
+    elif isinstance(error, commands.CommandNotFound):
+
+        return
+
+    elif isinstance(error, commands.MissingPermissions):
+
+        await ctx.send(
+            "❌ You don't have permission."
+        )
+
+    else:
+        print(error)
+
 # ================= RUN =================
 
 bot.run(TOKEN)
