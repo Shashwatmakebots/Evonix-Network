@@ -617,6 +617,399 @@ async def slash_plinko(
     await ctx.respond(embed=embed)
 
 # =========================================================
+# TICKET SYSTEM
+# =========================================================
+
+SUPPORT_ROLE_ID = 1505989423760937040
+
+GENERAL_SUPPORT_CATEGORY = 1506203152108621874
+PLUGIN_BUY_CATEGORY = 1506203245540806686
+BUG_REPORT_CATEGORY = 1506203360343363674
+CUSTOM_BOT_CATEGORY = 1506203448880660560
+BOT_SUPPORT_CATEGORY = 1506203521031077898
+BOT_BUY_CATEGORY = 1506203613108768879
+
+# =========================================================
+# CLOSE / CLAIM / TRANSCRIPT VIEW
+# =========================================================
+
+class TicketControls(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    # ================= CLAIM =================
+
+    @discord.ui.button(
+        label="Claim",
+        style=discord.ButtonStyle.green
+    )
+    async def claim_ticket(
+        self,
+        button,
+        interaction
+    ):
+
+        role = interaction.guild.get_role(
+            SUPPORT_ROLE_ID
+        )
+
+        if role not in interaction.user.roles:
+            return await interaction.response.send_message(
+                "❌ No permission",
+                ephemeral=True
+            )
+
+        embed = discord.Embed(
+            title="✅ Ticket Claimed",
+            description=(
+                f"{interaction.user.mention} "
+                f"claimed this ticket."
+            ),
+            color=discord.Color.green()
+        )
+
+        await interaction.channel.send(
+            embed=embed
+        )
+
+        await interaction.response.defer()
+
+    # ================= TRANSCRIPT =================
+
+    @discord.ui.button(
+        label="Transcript",
+        style=discord.ButtonStyle.blurple
+    )
+    async def transcript_ticket(
+        self,
+        button,
+        interaction
+    ):
+
+        messages = []
+
+        async for msg in interaction.channel.history(
+            limit=None,
+            oldest_first=True
+        ):
+
+            messages.append(
+                f"{msg.author}: {msg.content}"
+            )
+
+        transcript = "\n".join(messages)
+
+        with open(
+            "transcript.txt",
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(transcript)
+
+        await interaction.user.send(
+            file=discord.File(
+                "transcript.txt"
+            )
+        )
+
+        await interaction.response.send_message(
+            "📄 Transcript sent in DM.",
+            ephemeral=True
+        )
+
+    # ================= CLOSE =================
+
+    @discord.ui.button(
+        label="Close",
+        style=discord.ButtonStyle.red
+    )
+    async def close_ticket(
+        self,
+        button,
+        interaction
+    ):
+
+        role = interaction.guild.get_role(
+            SUPPORT_ROLE_ID
+        )
+
+        if role not in interaction.user.roles:
+            return await interaction.response.send_message(
+                "❌ No permission",
+                ephemeral=True
+            )
+
+        await interaction.response.send_message(
+            "🔒 Closing ticket..."
+        )
+
+        await interaction.channel.delete()
+
+# =========================================================
+# CREATE TICKET VIEW
+# =========================================================
+
+class TicketPanel(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    # =====================================================
+    # GENERAL SUPPORT
+    # =====================================================
+
+    @discord.ui.button(
+        label="General Support",
+        style=discord.ButtonStyle.blurple
+    )
+    async def general_support(
+        self,
+        button,
+        interaction
+    ):
+
+        await create_ticket(
+            interaction,
+            GENERAL_SUPPORT_CATEGORY,
+            "general"
+        )
+
+    # =====================================================
+    # PLUGIN BUY
+    # =====================================================
+
+    @discord.ui.button(
+        label="Plugin Buy",
+        style=discord.ButtonStyle.green
+    )
+    async def plugin_buy(
+        self,
+        button,
+        interaction
+    ):
+
+        await create_ticket(
+            interaction,
+            PLUGIN_BUY_CATEGORY,
+            "plugin"
+        )
+
+    # =====================================================
+    # BUG REPORT
+    # =====================================================
+
+    @discord.ui.button(
+        label="Bug Report",
+        style=discord.ButtonStyle.red
+    )
+    async def bug_report(
+        self,
+        button,
+        interaction
+    ):
+
+        await create_ticket(
+            interaction,
+            BUG_REPORT_CATEGORY,
+            "bug"
+        )
+
+    # =====================================================
+    # CUSTOM BOT
+    # =====================================================
+
+    @discord.ui.button(
+        label="Custom Bot Order",
+        style=discord.ButtonStyle.gray
+    )
+    async def custom_bot(
+        self,
+        button,
+        interaction
+    ):
+
+        await create_ticket(
+            interaction,
+            CUSTOM_BOT_CATEGORY,
+            "custom-bot"
+        )
+
+    # =====================================================
+    # BOT SUPPORT
+    # =====================================================
+
+    @discord.ui.button(
+        label="Discord Bot Problem",
+        style=discord.ButtonStyle.red
+    )
+    async def bot_problem(
+        self,
+        button,
+        interaction
+    ):
+
+        await create_ticket(
+            interaction,
+            BOT_SUPPORT_CATEGORY,
+            "bot-support"
+        )
+
+    # =====================================================
+    # BOT BUY
+    # =====================================================
+
+    @discord.ui.button(
+        label="Discord Bot Buy",
+        style=discord.ButtonStyle.green
+    )
+    async def bot_buy(
+        self,
+        button,
+        interaction
+    ):
+
+        await create_ticket(
+            interaction,
+            BOT_BUY_CATEGORY,
+            "bot-buy"
+        )
+
+# =========================================================
+# CREATE TICKET FUNCTION
+# =========================================================
+
+async def create_ticket(
+    interaction,
+    category_id,
+    ticket_type
+):
+
+    guild = interaction.guild
+
+    category = guild.get_channel(
+        category_id
+    )
+
+    role = guild.get_role(
+        SUPPORT_ROLE_ID
+    )
+
+    overwrites = {
+
+        guild.default_role:
+        discord.PermissionOverwrite(
+            view_channel=False
+        ),
+
+        interaction.user:
+        discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True
+        ),
+
+        role:
+        discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True
+        )
+    }
+
+    channel = await guild.create_text_channel(
+
+        name=f"{ticket_type}-{interaction.user.name}",
+
+        category=category,
+
+        overwrites=overwrites
+    )
+
+    embed = discord.Embed(
+        title="🎫 Support Ticket",
+        description=(
+            f"{interaction.user.mention}\n\n"
+            "Please explain your issue.\n"
+            "Staff will assist you soon."
+        ),
+        color=discord.Color.blurple()
+    )
+
+    await channel.send(
+        f"{interaction.user.mention} "
+        f"<@&{SUPPORT_ROLE_ID}>",
+        embed=embed,
+        view=TicketControls()
+    )
+
+    await interaction.response.send_message(
+        f"✅ Ticket created: {channel.mention}",
+        ephemeral=True
+    )
+
+# =========================================================
+# SEND PANEL COMMAND
+# =========================================================
+
+@bot.command()
+async def sendpanel(ctx):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.send(
+            "❌ No permission"
+        )
+
+    embed = discord.Embed(
+        title="🎫 Evonix Support Panel",
+        description=(
+            "Choose a category below "
+            "to create a ticket."
+        ),
+        color=discord.Color.purple()
+    )
+
+    embed.add_field(
+        name="General Support",
+        value="General help & support",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Plugin Buy",
+        value="Purchase plugins",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Bug Report",
+        value="Report bugs/issues",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Custom Bot Order",
+        value="Order custom bots",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Discord Bot Problem",
+        value="Bot support/issues",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Discord Bot Buy",
+        value="Purchase Discord bots",
+        inline=False
+    )
+
+    await ctx.send(
+        embed=embed,
+        view=TicketPanel()
+    )
+
+# =========================================================
 # RUN
 # =========================================================
 
