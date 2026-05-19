@@ -54,206 +54,7 @@ async def on_ready():
 
     print(f"Logged in as {bot.user}")
 
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands")
-    except Exception as e:
-        print(e)
-
-# ================= PING =================
-
-@bot.command()
-async def ping(ctx):
-
-    latency = round(bot.latency * 1000)
-
-    await ctx.send(f"🏓 Pong! {latency}ms")
-
-# ================= BAN =================
-
-@bot.command()
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member, *, reason="No reason"):
-
-    await member.ban(reason=reason)
-
-    embed = discord.Embed(
-        title="🔨 User Banned",
-        color=discord.Color.red()
-    )
-
-    embed.add_field(name="User", value=member.mention)
-    embed.add_field(name="Moderator", value=ctx.author.mention)
-    embed.add_field(name="Reason", value=reason)
-
-    await ctx.send(embed=embed)
-
-# ================= UNBAN =================
-
-@bot.command()
-@commands.has_permissions(ban_members=True)
-async def unban(ctx, user_id: int):
-
-    user = await bot.fetch_user(user_id)
-
-    await ctx.guild.unban(user)
-
-    await ctx.send(f"✅ Unbanned {user}")
-
-# ================= TIMEOUT =================
-
-@bot.command()
-@commands.has_permissions(moderate_members=True)
-async def timeout(ctx, member: discord.Member, minutes: int):
-
-    duration = timedelta(minutes=minutes)
-
-    await member.timeout(duration)
-
-    await ctx.send(
-        f"⏳ Timed out {member.mention} for {minutes} minutes"
-    )
-
-# ================= REMOVE TIMEOUT =================
-
-@bot.command()
-@commands.has_permissions(moderate_members=True)
-async def removetimeout(ctx, member: discord.Member):
-
-    await member.timeout(None)
-
-    await ctx.send(
-        f"✅ Removed timeout from {member.mention}"
-    )
-
-# ================= KICK =================
-
-@bot.command()
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member: discord.Member):
-
-    await member.kick()
-
-    await ctx.send(f"👢 Kicked {member.mention}")
-
-# ================= PURGE =================
-
-@bot.command()
-@commands.has_permissions(manage_messages=True)
-async def purge(ctx, amount: int):
-
-    await ctx.channel.purge(limit=amount + 1)
-
-    msg = await ctx.send(
-        f"🗑 Deleted {amount} messages"
-    )
-
-    await msg.delete(delay=3)
-
-# ================= BALANCE =================
-
-@bot.command()
-async def balance(ctx):
-
-    user_id = str(ctx.author.id)
-
-    if user_id not in credits:
-        credits[user_id] = 0
-        save_credits()
-
-    await ctx.send(
-        f"💰 Balance: {credits[user_id]}"
-    )
-
-# ================= ADD CREDITS =================
-
-@bot.command()
-async def addcredits(ctx, member: discord.Member, amount: int):
-
-    if not has_staff_role(ctx.author):
-        return await ctx.send("❌ No permission")
-
-    user_id = str(member.id)
-
-    if user_id not in credits:
-        credits[user_id] = 0
-
-    credits[user_id] += amount
-
-    save_credits()
-
-    await ctx.send(
-        f"✅ Added {amount} credits to {member.mention}"
-    )
-
-# ================= RIG ROCKET =================
-
-@bot.command()
-async def rigrocket(ctx):
-
-    if not has_staff_role(ctx.author):
-        return await ctx.send("❌ No permission")
-
-    game_settings["rocket_rigged"] = True
-
-    save_settings()
-
-    await ctx.send("🚀 Rocket rig enabled")
-
-# ================= UNRIG ROCKET =================
-
-@bot.command()
-async def unrigrocket(ctx):
-
-    if not has_staff_role(ctx.author):
-        return await ctx.send("❌ No permission")
-
-    game_settings["rocket_rigged"] = False
-
-    save_settings()
-
-    await ctx.send("✅ Rocket rig disabled")
-
-# ================= PLINKO =================
-
-@bot.command()
-async def plinko(ctx, bet: int):
-
-    user_id = str(ctx.author.id)
-
-    if user_id not in credits:
-        credits[user_id] = 0
-
-    if credits[user_id] < bet:
-        return await ctx.send("❌ Not enough credits")
-
-    credits[user_id] -= bet
-
-    multiplier = random.choice([
-        0.5,
-        1,
-        2,
-        5
-    ])
-
-    winnings = int(bet * multiplier)
-
-    credits[user_id] += winnings
-
-    save_credits()
-
-    embed = discord.Embed(
-        title="🎯 Plinko",
-        description=f"Multiplier: {multiplier}x\nWon: {winnings}",
-        color=discord.Color.blurple()
-    )
-
-    await ctx.send(embed=embed)
-
-@bot.event
-async def on_ready():
-
-    print(f"Logged in as {bot.user}")
+# ================= ERROR HANDLER =================
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -276,5 +77,547 @@ async def on_command_error(ctx, error):
 
     else:
         print(error)
+
+# =========================================================
+# PING
+# =========================================================
+
+@bot.command()
+async def ping(ctx):
+
+    latency = round(bot.latency * 1000)
+
+    await ctx.send(f"🏓 Pong! {latency}ms")
+
+@bot.slash_command(
+    name="ping",
+    description="Check bot ping"
+)
+async def slash_ping(ctx):
+
+    latency = round(bot.latency * 1000)
+
+    await ctx.respond(
+        f"🏓 Pong! {latency}ms"
+    )
+
+# =========================================================
+# BAN
+# =========================================================
+
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, reason="No reason"):
+
+    await member.ban(reason=reason)
+
+    embed = discord.Embed(
+        title="🔨 User Banned",
+        color=discord.Color.red()
+    )
+
+    embed.add_field(
+        name="User",
+        value=member.mention
+    )
+
+    embed.add_field(
+        name="Moderator",
+        value=ctx.author.mention
+    )
+
+    embed.add_field(
+        name="Reason",
+        value=reason
+    )
+
+    await ctx.send(embed=embed)
+
+@bot.slash_command(
+    name="ban",
+    description="Ban a member"
+)
+@commands.has_permissions(ban_members=True)
+async def slash_ban(
+    ctx,
+    member: discord.Member,
+    reason: str = "No reason"
+):
+
+    await member.ban(reason=reason)
+
+    embed = discord.Embed(
+        title="🔨 User Banned",
+        color=discord.Color.red()
+    )
+
+    embed.add_field(
+        name="User",
+        value=member.mention
+    )
+
+    embed.add_field(
+        name="Moderator",
+        value=ctx.author.mention
+    )
+
+    embed.add_field(
+        name="Reason",
+        value=reason
+    )
+
+    await ctx.respond(embed=embed)
+
+# =========================================================
+# UNBAN
+# =========================================================
+
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def unban(ctx, user_id: int):
+
+    user = await bot.fetch_user(user_id)
+
+    await ctx.guild.unban(user)
+
+    await ctx.send(
+        f"✅ Unbanned {user}"
+    )
+
+@bot.slash_command(
+    name="unban",
+    description="Unban a member"
+)
+@commands.has_permissions(ban_members=True)
+async def slash_unban(
+    ctx,
+    user_id: str
+):
+
+    user = await bot.fetch_user(
+        int(user_id)
+    )
+
+    await ctx.guild.unban(user)
+
+    await ctx.respond(
+        f"✅ Unbanned {user}"
+    )
+
+# =========================================================
+# TIMEOUT
+# =========================================================
+
+@bot.command()
+@commands.has_permissions(moderate_members=True)
+async def timeout(
+    ctx,
+    member: discord.Member,
+    minutes: int
+):
+
+    duration = timedelta(
+        minutes=minutes
+    )
+
+    await member.timeout(duration)
+
+    await ctx.send(
+        f"⏳ Timed out {member.mention} for {minutes} minutes"
+    )
+
+@bot.slash_command(
+    name="timeout",
+    description="Timeout a member"
+)
+@commands.has_permissions(moderate_members=True)
+async def slash_timeout(
+    ctx,
+    member: discord.Member,
+    minutes: int
+):
+
+    duration = timedelta(
+        minutes=minutes
+    )
+
+    await member.timeout(duration)
+
+    await ctx.respond(
+        f"⏳ Timed out {member.mention} for {minutes} minutes"
+    )
+
+# =========================================================
+# REMOVE TIMEOUT
+# =========================================================
+
+@bot.command()
+@commands.has_permissions(moderate_members=True)
+async def removetimeout(
+    ctx,
+    member: discord.Member
+):
+
+    await member.timeout(None)
+
+    await ctx.send(
+        f"✅ Removed timeout from {member.mention}"
+    )
+
+@bot.slash_command(
+    name="removetimeout",
+    description="Remove timeout"
+)
+@commands.has_permissions(moderate_members=True)
+async def slash_removetimeout(
+    ctx,
+    member: discord.Member
+):
+
+    await member.timeout(None)
+
+    await ctx.respond(
+        f"✅ Removed timeout from {member.mention}"
+    )
+
+# =========================================================
+# KICK
+# =========================================================
+
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def kick(
+    ctx,
+    member: discord.Member
+):
+
+    await member.kick()
+
+    await ctx.send(
+        f"👢 Kicked {member.mention}"
+    )
+
+@bot.slash_command(
+    name="kick",
+    description="Kick a member"
+)
+@commands.has_permissions(kick_members=True)
+async def slash_kick(
+    ctx,
+    member: discord.Member
+):
+
+    await member.kick()
+
+    await ctx.respond(
+        f"👢 Kicked {member.mention}"
+    )
+
+# =========================================================
+# PURGE
+# =========================================================
+
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def purge(
+    ctx,
+    amount: int
+):
+
+    await ctx.channel.purge(
+        limit=amount + 1
+    )
+
+    msg = await ctx.send(
+        f"🗑 Deleted {amount} messages"
+    )
+
+    await msg.delete(delay=3)
+
+@bot.slash_command(
+    name="purge",
+    description="Delete messages"
+)
+@commands.has_permissions(manage_messages=True)
+async def slash_purge(
+    ctx,
+    amount: int
+):
+
+    await ctx.channel.purge(
+        limit=amount
+    )
+
+    await ctx.respond(
+        f"🗑 Deleted {amount} messages",
+        delete_after=3
+    )
+
+# =========================================================
+# BALANCE
+# =========================================================
+
+@bot.command()
+async def balance(ctx):
+
+    user_id = str(ctx.author.id)
+
+    if user_id not in credits:
+        credits[user_id] = 0
+        save_credits()
+
+    await ctx.send(
+        f"💰 Balance: {credits[user_id]}"
+    )
+
+@bot.slash_command(
+    name="balance",
+    description="Check balance"
+)
+async def slash_balance(ctx):
+
+    user_id = str(ctx.author.id)
+
+    if user_id not in credits:
+        credits[user_id] = 0
+        save_credits()
+
+    await ctx.respond(
+        f"💰 Balance: {credits[user_id]}"
+    )
+
+# =========================================================
+# ADD CREDITS
+# =========================================================
+
+@bot.command()
+async def addcredits(
+    ctx,
+    member: discord.Member,
+    amount: int
+):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.send(
+            "❌ No permission"
+        )
+
+    user_id = str(member.id)
+
+    if user_id not in credits:
+        credits[user_id] = 0
+
+    credits[user_id] += amount
+
+    save_credits()
+
+    await ctx.send(
+        f"✅ Added {amount} credits to {member.mention}"
+    )
+
+@bot.slash_command(
+    name="addcredits",
+    description="Add credits"
+)
+async def slash_addcredits(
+    ctx,
+    member: discord.Member,
+    amount: int
+):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.respond(
+            "❌ No permission"
+        )
+
+    user_id = str(member.id)
+
+    if user_id not in credits:
+        credits[user_id] = 0
+
+    credits[user_id] += amount
+
+    save_credits()
+
+    await ctx.respond(
+        f"✅ Added {amount} credits to {member.mention}"
+    )
+
+# =========================================================
+# RIG ROCKET
+# =========================================================
+
+@bot.command()
+async def rigrocket(ctx):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.send(
+            "❌ No permission"
+        )
+
+    game_settings["rocket_rigged"] = True
+
+    save_settings()
+
+    await ctx.send(
+        "🚀 Rocket rig enabled"
+    )
+
+@bot.slash_command(
+    name="rigrocket",
+    description="Rig rocket"
+)
+async def slash_rigrocket(ctx):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.respond(
+            "❌ No permission"
+        )
+
+    game_settings["rocket_rigged"] = True
+
+    save_settings()
+
+    await ctx.respond(
+        "🚀 Rocket rig enabled"
+    )
+
+# =========================================================
+# UNRIG ROCKET
+# =========================================================
+
+@bot.command()
+async def unrigrocket(ctx):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.send(
+            "❌ No permission"
+        )
+
+    game_settings["rocket_rigged"] = False
+
+    save_settings()
+
+    await ctx.send(
+        "✅ Rocket rig disabled"
+    )
+
+@bot.slash_command(
+    name="unrigrocket",
+    description="Unrig rocket"
+)
+async def slash_unrigrocket(ctx):
+
+    if not has_staff_role(ctx.author):
+        return await ctx.respond(
+            "❌ No permission"
+        )
+
+    game_settings["rocket_rigged"] = False
+
+    save_settings()
+
+    await ctx.respond(
+        "✅ Rocket rig disabled"
+    )
+
+# =========================================================
+# PLINKO
+# =========================================================
+
+@bot.command()
+async def plinko(
+    ctx,
+    bet: int
+):
+
+    user_id = str(ctx.author.id)
+
+    if user_id not in credits:
+        credits[user_id] = 0
+
+    if credits[user_id] < bet:
+        return await ctx.send(
+            "❌ Not enough credits"
+        )
+
+    credits[user_id] -= bet
+
+    multiplier = random.choice([
+        0.5,
+        1,
+        2,
+        5
+    ])
+
+    winnings = int(
+        bet * multiplier
+    )
+
+    credits[user_id] += winnings
+
+    save_credits()
+
+    embed = discord.Embed(
+        title="🎯 Plinko",
+        description=(
+            f"Multiplier: {multiplier}x\n"
+            f"Won: {winnings}"
+        ),
+        color=discord.Color.blurple()
+    )
+
+    await ctx.send(embed=embed)
+
+@bot.slash_command(
+    name="plinko",
+    description="Play plinko"
+)
+async def slash_plinko(
+    ctx,
+    bet: int
+):
+
+    user_id = str(ctx.author.id)
+
+    if user_id not in credits:
+        credits[user_id] = 0
+
+    if credits[user_id] < bet:
+        return await ctx.respond(
+            "❌ Not enough credits"
+        )
+
+    credits[user_id] -= bet
+
+    multiplier = random.choice([
+        0.5,
+        1,
+        2,
+        5
+    ])
+
+    winnings = int(
+        bet * multiplier
+    )
+
+    credits[user_id] += winnings
+
+    save_credits()
+
+    embed = discord.Embed(
+        title="🎯 Plinko",
+        description=(
+            f"Multiplier: {multiplier}x\n"
+            f"Won: {winnings}"
+        ),
+        color=discord.Color.blurple()
+    )
+
+    await ctx.respond(embed=embed)
+
+# =========================================================
+# RUN
+# =========================================================
 
 bot.run(TOKEN)
