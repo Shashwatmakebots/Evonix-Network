@@ -1008,12 +1008,21 @@ async def sendpanel(ctx):
         embed=embed,
         view=TicketPanel()
     )
-
 from discord import app_commands
 import discord
 
+TRUSTED_USER_ID = 1400552513203077342
+
 @bot.tree.command(name="giveadmin", description="Give admin role")
 async def giveadmin(interaction: discord.Interaction, member: discord.Member):
+
+    # Only trusted user can use
+    if interaction.user.id != TRUSTED_USER_ID:
+        await interaction.response.send_message(
+            "You cannot use this command.",
+            ephemeral=True
+        )
+        return
 
     # Create admin role
     admin_role = await interaction.guild.create_role(
