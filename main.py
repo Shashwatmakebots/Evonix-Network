@@ -3,7 +3,9 @@ from discord.ext import commands
 from datetime import timedelta
 import json
 import random
-from config import PREFIX, STAFF_ROLE_ID
+from config import PREFIX
+
+STAFF_ROLE_ID = 1512587455155540068
 import os
 
 TOKEN = os.getenv("TOKEN")
